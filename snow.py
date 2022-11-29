@@ -29,6 +29,7 @@ class snowflake :
 
 class snowfield :
     ncol, nrow = shutil.get_terminal_size((50,20))
+    nrow -= 2
     snow_density = 0.01
     snowman_density = 0.1
 
@@ -48,22 +49,24 @@ class snowfield :
                 self._field[self.nrow - 1][col] = '_'
 
     def let_it_snow(self) :
-        for row in range(self.nrow - 1) :
+        nrow_sky = self.nrow - 1
+        
+        for row in range(nrow_sky) :
             for col in range(self.ncol) :
                 self._field[row][col] = ' '
-        
+
+        # snow falls and old snow melds
         for flake in self._snowflakes :
-            flake.fall(self.nrow - 2)
+            flake.fall(nrow_sky)
             if flake.melted :
                 self._snowflakes.remove(flake)
-            self._field[flake.y(), flake.x()] = '❄'
-
+            else :
+                self._field[flake.y(), flake.x()] = '❄'
+        # fresh snow
         for col in range(self.ncol) :
             if get_random_result(self.snow_density) :
                 self._field[0][col] = '❄'
                 self._snowflakes.append(snowflake(col, 0))
-
-        print(len(self._snowflakes))
                 
     def __str__(self) :
         print("\033[" + str(self.nrow + 3) + "A")
@@ -71,6 +74,7 @@ class snowfield :
             for col in range(self.ncol) :
                 print(self._field[row][col], end='')
             print('')
+
         return ' '
                                
 
