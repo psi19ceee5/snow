@@ -68,6 +68,23 @@ class house(field) :
         self._field[3,:] = np.array(list(self._row4))
         self._field[4,:] = np.array(list(self._row5))
 
+class tree(field) :
+    ncol = 5
+    nrow = 4
+    
+    _row1 = " \ / "
+    _row2 = "- * -"
+    _row3 = " /|\ "
+    _row4 = "//|\\\\"
+    
+    def __init__(self, x, y) :
+        super().__init__()
+        self._pos = np.array([x, y])
+        
+        self._field[0,:] = np.array(list(self._row1))
+        self._field[1,:] = np.array(list(self._row2))
+        self._field[2,:] = np.array(list(self._row3))
+        self._field[3,:] = np.array(list(self._row4))
             
 class santa(field) :
     ncol = 42
@@ -107,11 +124,13 @@ class snowfield(field) :
     snowman_density = 0.1
     santa_prob = 0.02
     house_density = 0.05
+    tree_density = 0.03
 
     def __init__(self) :
         self._snowflakes = []
         self._santa = []
         self._houses = []
+        self._trees = []
         super().__init__()
         for row in range(self.nrow - 1) :
             for col in range(self.ncol) :
@@ -125,12 +144,8 @@ class snowfield(field) :
                 self._field[self.nrow - 1][col] = '_'
         for col in range(self.ncol - house.ncol) :
             if get_random_result(self.house_density) :
-                occupied = False
-                for h in self._houses :
-                    if h.x() + house.ncol + 3 > col :
-                        occupied = True
-                if not occupied :
-                    self._houses.append(house(col, self.nrow-5))
+                if not self.cell_is_occupied(self.nrow-2, col) :
+                    self._houses.append(house(col, self.nrow-house.nrow))
         for hou in self._houses :
             housefield = hou.get_field()
             rows, cols = np.shape(housefield)
@@ -140,7 +155,20 @@ class snowfield(field) :
                     row_ = hou.y() + row
                     if col_ < len(self._field[0,:]) and col_ >= 0 and row_ < len(self._field[:,0]) and row_ >= 0 :
                         self._field[row_][col_] = housefield[row][col]
-            
+        for col in range(self.ncol - tree.ncol) :
+            if get_random_result(self.tree_density) :
+                if not self.cell_is_occupied(self.nrow-2, col) and not self.cell_is_occupied(self.nrow-2, col+tree.ncol) :
+                    self._trees.append(tree(col, self.nrow-tree.nrow))
+        for tre in self._trees :
+            treefield = tre.get_field()
+            rows, cols = np.shape(treefield)
+            for col in range(cols) :
+                for row in range(rows) :
+                    col_ = tre.x() + col
+                    row_ = tre.y() + row
+                    if col_ < len(self._field[0,:]) and col_ >= 0 and row_ < len(self._field[:,0]) and row_ >= 0 :
+                        self._field[row_][col_] = treefield[row][col]           
+
             
     def let_it_snow(self) :
         nrow_sky = self.nrow - 1
@@ -156,7 +184,8 @@ class snowfield(field) :
             if flake.melted :
                 self._snowflakes.remove(flake)
             else :
-                if self._field[flake.y(), flake.x()] == " " :
+#                if self._field[flake.y(), flake.x()] == " " :
+                if not self.cell_is_occupied(flake.y(), flake.x()) :
                     self._field[flake.y(), flake.x()] = '❄'
                 
         # santa rides along
@@ -196,6 +225,9 @@ class snowfield(field) :
         for hou in self._houses :
             if x >= hou.x() and x < hou.x() + hou.ncol and y >= hou.y() and y < hou.y() + hou.nrow :
                 return hou.get_field()[y-hou.y()][x-hou.x()] != ' ' 
+        for tre in self._trees :
+            if x >= tre.x() and x < tre.x() + tre.ncol and y >= tre.y() and y < tre.y() + tre.nrow :
+                return True
         return False
                 
     def __str__(self) :
