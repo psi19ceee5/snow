@@ -85,6 +85,26 @@ class tree(field) :
         self._field[1,:] = np.array(list(self._row2))
         self._field[2,:] = np.array(list(self._row3))
         self._field[3,:] = np.array(list(self._row4))
+        
+class snowman(field):
+    ncol = 7
+    nrow = 5
+    
+    _row1 = "   _   "
+    _row2 = " _|-|_ "
+    _row3 = "  (\")  "
+    _row4 = "--(_)--"
+    _row5 = " (___) "
+    
+    def __init__(self, x, y) :
+        super().__init__()
+        self._pos = np.array([x, y])
+        
+        self._field[0,:] = np.array(list(self._row1))
+        self._field[1,:] = np.array(list(self._row2))
+        self._field[2,:] = np.array(list(self._row3))
+        self._field[3,:] = np.array(list(self._row4))
+        self._field[4,:] = np.array(list(self._row5))
             
 class santa(field) :
     ncol = 42
@@ -121,16 +141,17 @@ class snowfield(field) :
     ncol, nrow = shutil.get_terminal_size((50,20))
     nrow -= 2
     snow_density = 0.01
-    snowman_density = 0.
     santa_prob = 0.02
     house_density = 0.05
     tree_density = 0.03
+    snowman_density = 0.02
 
     def __init__(self) :
         self._snowflakes = []
         self._santa = []
         self._houses = []
         self._trees = []
+        self._snowmen = []
         super().__init__()
         for row in range(self.nrow - 1) :
             for col in range(self.ncol) :
@@ -138,10 +159,7 @@ class snowfield(field) :
                     self._field[row][col] = '❄'
                     self._snowflakes.append(snowflake(col, row))
         for col in range(self.ncol) :
-            if get_random_result(self.snowman_density) :
-                self._field[self.nrow - 1][col] = '☃'
-            else :
-                self._field[self.nrow - 1][col] = '_'
+            self._field[self.nrow - 1][col] = '_'
         for col in range(self.ncol - house.ncol) :
             if get_random_result(self.house_density) :
                 if not self.cell_is_occupied(self.nrow-2, col) :
@@ -167,7 +185,21 @@ class snowfield(field) :
                     col_ = tre.x() + col
                     row_ = tre.y() + row
                     if col_ < len(self._field[0,:]) and col_ >= 0 and row_ < len(self._field[:,0]) and row_ >= 0 :
-                        self._field[row_][col_] = treefield[row][col]           
+                        self._field[row_][col_] = treefield[row][col]
+        for col in range(self.ncol - snowman.ncol) :
+            if get_random_result(self.snowman_density) :
+                if not self.cell_is_occupied(self.nrow-2, col) and not self.cell_is_occupied(self.nrow-2, col+snowman.ncol) :
+                    self._snowmen.append(snowman(col, self.nrow-snowman.nrow))
+        for sno in self._snowmen :
+            snowmanfield = sno.get_field()
+            rows, cols = np.shape(snowmanfield)
+            for col in range(cols) :
+                for row in range(rows) :
+                    col_ = sno.x() + col
+                    row_ = sno.y() + row
+                    if col_ < len(self._field[0,:]) and col_ >= 0 and row_ < len(self._field[:,0]) and row_ >= 0 :
+                        self._field[row_][col_] = snowmanfield[row][col]
+        
 
             
     def let_it_snow(self) :
@@ -227,6 +259,9 @@ class snowfield(field) :
                 return hou.get_field()[y-hou.y()][x-hou.x()] != ' ' 
         for tre in self._trees :
             if x >= tre.x() and x < tre.x() + tre.ncol and y >= tre.y() and y < tre.y() + tre.nrow :
+                return True
+        for sno in self._snowmen :
+            if x >= sno.x() and x < sno.x() + sno.ncol and y >= sno.y() and y < sno.y() + sno.nrow :
                 return True
         return False
                 
