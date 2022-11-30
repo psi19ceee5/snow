@@ -24,6 +24,9 @@ class field :
 
     def y(self) :
         return self._pos[1]
+    
+    def get_field(self) :
+        return self._field
 
 class snowflake(field) :
     ncol = 1
@@ -44,6 +47,27 @@ class snowflake(field) :
         self._pos += np.array([0, 1])
         if self._pos[1] + 1 > ymax :
             self.melted = True    
+            
+class house(field) :
+    ncol = 12
+    nrow = 5
+    
+    _row1 = "   /        "
+    _row2 = "  ((        "
+    _row3 = " .-#------. "
+    _row4 = "/__________\\"
+    _row5 = "_| []  []_|_"
+    
+    def __init__(self, x, y) :
+        super().__init__()
+        self._pos = np.array([x, y])
+        
+        self._field[0,:] = np.array(list(self._row1))
+        self._field[1,:] = np.array(list(self._row2))
+        self._field[2,:] = np.array(list(self._row3))
+        self._field[3,:] = np.array(list(self._row4))
+        self._field[4,:] = np.array(list(self._row5))
+
             
 class santa(field) :
     ncol = 42
@@ -75,20 +99,19 @@ class santa(field) :
             self._field[3,:] = np.array(list(self._row4_1))
         if self._pos[0] <= -self.ncol :
             self.vanished = True
-        
-    def get_field(self) :
-        return self._field
-    
+            
 class snowfield(field) :
     ncol, nrow = shutil.get_terminal_size((50,20))
     nrow -= 2
     snow_density = 0.01
     snowman_density = 0.1
     santa_prob = 0.02
+    house_density = 0.05
 
     def __init__(self) :
         self._snowflakes = []
         self._santa = []
+        self._houses = []
         super().__init__()
         for row in range(self.nrow - 1) :
             for col in range(self.ncol) :
@@ -100,13 +123,32 @@ class snowfield(field) :
                 self._field[self.nrow - 1][col] = '☃'
             else :
                 self._field[self.nrow - 1][col] = '_'
-
+        for col in range(self.ncol - house.ncol) :
+            if get_random_result(self.house_density) :
+                occupied = False
+                for h in self._houses :
+                    if h.x() + house.ncol + 3 > col :
+                        occupied = True
+                if not occupied :
+                    self._houses.append(house(col, self.nrow-5))
+        for hou in self._houses :
+            housefield = hou.get_field()
+            rows, cols = np.shape(housefield)
+            for col in range(cols) :
+                for row in range(rows) :
+                    col_ = hou.x() + col
+                    row_ = hou.y() + row
+                    if col_ < len(self._field[0,:]) and col_ >= 0 and row_ < len(self._field[:,0]) and row_ >= 0 :
+                        self._field[row_][col_] = housefield[row][col]
+            
+            
     def let_it_snow(self) :
         nrow_sky = self.nrow - 1
         
         for row in range(nrow_sky) :
             for col in range(self.ncol) :
-                self._field[row][col] = ' '
+                if not self.cell_is_occupied(row, col) :
+                    self._field[row][col] = ' '
 
         # snow falls and old snow melds
         for flake in self._snowflakes :
@@ -114,7 +156,8 @@ class snowfield(field) :
             if flake.melted :
                 self._snowflakes.remove(flake)
             else :
-                self._field[flake.y(), flake.x()] = '❄'
+                if self._field[flake.y(), flake.x()] == " " :
+                    self._field[flake.y(), flake.x()] = '❄'
                 
         # santa rides along
         for san in self._santa :
@@ -139,10 +182,21 @@ class snowfield(field) :
         
         # ask if santa wants to come
         if len(self._santa) == 0 and get_random_result(self.santa_prob) :
-            if self.nrow < 6 or self.ncol < 50 :
+            if self.nrow < 11 or self.ncol < 50 :
                 pass
-            y_start = rnd.randint(1,self.nrow-5)
+            y_start = rnd.randint(1,self.nrow-10)
             self._santa.append(santa(self.ncol, y_start))
+            
+    def cell_is_occupied(self, y, x) :
+        if y == self.nrow-1 :
+            return True
+        for san in self._santa :
+            if x >= san.x() and x < san.x() + san.ncol and y >= san.y() and y < san.y() + san.nrow :
+                return True
+        for hou in self._houses :
+            if x >= hou.x() and x < hou.x() + hou.ncol and y >= hou.y() and y < hou.y() + hou.nrow :
+                return hou.get_field()[y-hou.y()][x-hou.x()] != ' ' 
+        return False
                 
     def __str__(self) :
         print("\033[" + str(self.nrow + 3) + "A")
