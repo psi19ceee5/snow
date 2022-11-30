@@ -121,7 +121,7 @@ class snowfield(field) :
     ncol, nrow = shutil.get_terminal_size((50,20))
     nrow -= 2
     snow_density = 0.01
-    snowman_density = 0.1
+    snowman_density = 0.
     santa_prob = 0.02
     house_density = 0.05
     tree_density = 0.03
