@@ -280,7 +280,7 @@ def main() :
     print(sf)
 
     while True :
-        time.sleep(0.5)
+        time.sleep(1)
         sf.let_it_snow()
         print(sf)
     
