@@ -1,0 +1,10 @@
+Credits for the ASCII-art used in this project go to 
+
+  Laura ("ldb") from asciiartist.com
+
+and were originally posted on asciiartist.com. 
+
+For the purpose of animation, the individual ASCII-art objects were taken 
+out of their original context which can be found at
+
+  https://asciiartist.com/santa-and-sleigh-for-christmas-in-ascii-text-art/
