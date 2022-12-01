@@ -204,22 +204,7 @@ class snowfield(field) :
             
     def let_it_snow(self) :
         nrow_sky = self.nrow - 1
-        
-        for row in range(nrow_sky) :
-            for col in range(self.ncol) :
-                if not self.cell_is_occupied(row, col) :
-                    self._field[row][col] = ' '
 
-        # snow falls and old snow melds
-        for flake in self._snowflakes :
-            flake.fall(nrow_sky)
-            if flake.melted :
-                self._snowflakes.remove(flake)
-            else :
-#                if self._field[flake.y(), flake.x()] == " " :
-                if not self.cell_is_occupied(flake.y(), flake.x()) :
-                    self._field[flake.y(), flake.x()] = '❄'
-                
         # santa rides along
         for san in self._santa :
             san.ride()
@@ -234,6 +219,21 @@ class snowfield(field) :
                         row_ = san.y() + row
                         if col_ < len(self._field[0,:]) and col_ >= 0 and row_ < len(self._field[:,0]) and row_ >= 0 :
                             self._field[row_][col_] = santafield[row][col]
+
+        # erase trails of moving objects 
+        for row in range(nrow_sky) :
+            for col in range(self.ncol) :
+                if not self.cell_is_occupied(row, col) :
+                    self._field[row][col] = ' '
+                    
+        # snow falls and old snow melds
+        for flake in self._snowflakes :
+            flake.fall(nrow_sky)
+            if flake.melted :
+                self._snowflakes.remove(flake)
+            else :
+                if not self.cell_is_occupied(flake.y(), flake.x()) :
+                    self._field[flake.y(), flake.x()] = '❄'
 
         # make some fresh snow
         for col in range(self.ncol) :
